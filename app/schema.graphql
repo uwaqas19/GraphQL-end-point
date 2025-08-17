@@ -1,0 +1,77 @@
+"""
+GraphQL Schema for BIM Geometry + Semantic Exchange
+Includes geometry, IFC queries, lifecycle metrics
+"""
+
+type Query {
+  # --- 3d Geometry ( openCascade ) ---
+  elementVolume(filepath: String!, elementId: String!): Float
+  elementSurfaceArea(filepath: String!, elementId: String!): Float
+
+  #--- 2D Geometry (Shapely / WKT) ----
+  areaFromWKT(wkt: String!, elementId: String!): Float
+  perimeterFromWKT(wkt: String!): Float
+  intersectionFromWKT(wkt1: String!, wkt2: String!): Boolean
+# ---- IFC Element Queries ---
+  elementByType(filepath: String!, elementType: String!): [IFCElement]
+  elementProperties(filepath: String!, elementId: String!): IFCElement
+  ifcPropertySets(filepath: String!, elementId: String!): [PropertySet]
+
+  # --- Spatial Hierarchy ---
+  ifcSpatialHierarchy(filepath: String!): [SpatialNode]
+
+  #--- Lifecycle Analysis ---
+  elementMaterialUsage(filepath: String!, elementId: String!): Float
+  elementEmbodiedCarbon(filepath: String!, elementId: String!): Float
+
+  # --- Clash Detection ---
+  detectClashes(filepath: String!): [ClashResult]
+
+   # --- Geometry Exchange (GLB or Mesh) ---
+  getElementGeometry(filepath: String!, elementId: String!): ElementGeometry
+
+    # ---- Authentication (JWT-based login) ----
+  login(username: String!, role: String!): String
+
+}
+
+# ------ IFC Types ------
+type IFCElement {
+  id: String
+  name: String
+  type: String
+  area: Float
+  volume: Float
+  material: String
+}
+
+type PropertySet {
+  name: String
+  properties: [Property]
+}
+
+type Property {
+  key: String
+  value: String
+}
+
+type SpatialNode {
+  id: String
+  name: String
+  type: String
+  children: [SpatialNode]
+}
+
+type ClashResult {
+  element1: String
+  element2: String
+  intersectionVolume: Float
+}
+# ------ Geometry Response ------
+type ElementGeometry {
+  id: String
+  name: String
+  glbUrl: String
+  vertices: [[Float]]
+  faces: [[Int]]
+}
