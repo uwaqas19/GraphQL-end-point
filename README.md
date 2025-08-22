@@ -44,12 +44,13 @@ See requirements.txt for exact versions.
 ## Installation (sketch)
 
 ```
-# Clone your repo
-git clone <YOUR_REPO_URL>
-cd <YOUR_REPO_DIR>
+Clone your repo
+git clone https://github.com/uwaqas19/GraphQL-end-point.git
+
+cd GraphQL-end-point
 
 # If you intend to regenerate the schema, include submodules
-# git clone --recurse-submodules <YOUR_REPO_URL>
+# git clone --recurse-submodules https://github.com/uwaqas19/GraphQL-end-point.git
 # or, if already cloned:
 # git submodule update --init --recursive
 
@@ -59,7 +60,7 @@ source .venv/bin/activate
 
 # Or use conda
 # conda env create -f environment.yml
-# conda activate <env>
+# conda activate fast_env
 
 # Install deps
 pip install -r requirements.txt
@@ -78,16 +79,11 @@ export GEOM_DEBUG=1
 Start the server (FastAPI):
 
 ```
-uvicorn app.utils.main:app --reload
+uvicorn app.main:app --reload
 ```
 
 GraphQL API: [http://127.0.0.1:8000/graphql](http://127.0.0.1:8000/graphql) GLB Viewer: [http://127.0.0.1:8000/viewer](http://127.0.0.1:8000/viewer) and /viewer/{GUID}
 
-Flask alternative (if you keep the original app):
-
-```
-export FLASK_APP=app.py
-flask run
 ```
 
 Example flow:
@@ -135,20 +131,11 @@ If you do not change schema generation, the pre-generated files are sufficient.
 
 ## Citation
 
-If you use this in academic work, please cite the work above.
+---
+
+## Licensce
 
 ---
 
-## License
-
-MIT
-
----
-
-## TODOs for you to fill in
-
-* Replace placeholders like YOUR\_REPO\_URL and GUIDs
-* Decide on FastAPI vs Flask and prune unused bits
-* Confirm whether exact CAD exports are enabled; remove if not needed
-* Add screenshots or GIFs (e.g., /viewer), and deployment notes (Docker, CI)
+##
 
