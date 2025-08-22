@@ -8,9 +8,6 @@ ifcopenshell==0.8.0       # IFC parsing and geometry access (OpenCascade-based)
 pythonocc-core==7.7.2     # OpenCascade bindings for 3D geometry operations
 shapely==2.0.6            # WKT & 2D geometry library (area, perimeter, intersection)
 
-# ------------------ Semantic/RDF (GeoSPARQL) ------------------
-rdflib==7.0.0             # RDF triple management and SPARQL querying
-
 # ------------------ Lifecycle & Scientific ------------------
 numpy==2.1.1              # Numerical support (can assist volume, matrix ops)
 

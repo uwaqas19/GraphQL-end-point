@@ -5,7 +5,7 @@ from app.services.geometry_service import (
     check_wkt_intersection,
 )
 
-# 🧪 Basic 2D Geometry Tests using Shapely
+# Basic 2D Geometry Tests using Shapely
 
 def test_area_from_wkt():
     square = "POLYGON((0 0, 0 10, 10 10, 10 0, 0 0))"

@@ -3,41 +3,68 @@ GraphQL Schema for BIM Geometry + Semantic Exchange
 Includes geometry, IFC queries, lifecycle metrics
 """
 
+# ------------Root ---------------
 type Query {
-  # --- 3d Geometry ( openCascade ) ---
-  elementVolume(filepath: String!, elementId: String!): Float
-  elementSurfaceArea(filepath: String!, elementId: String!): Float
+  # --- 3D Geometry (OpenCASCADE) ---
+  elementVolume(filePath: String!, elementId: ID!): Float
+  elementSurfaceArea(filePath: String!, elementId: ID!): Float
 
-  #--- 2D Geometry (Shapely / WKT) ----
-  areaFromWKT(wkt: String!, elementId: String!): Float
+  # --- 2D Geometry (Shapely / WKT) ---
+  areaFromWKT(wkt: String!): Float
   perimeterFromWKT(wkt: String!): Float
   intersectionFromWKT(wkt1: String!, wkt2: String!): Boolean
-# ---- IFC Element Queries ---
-  elementByType(filepath: String!, elementType: String!): [IFCElement]
-  elementProperties(filepath: String!, elementId: String!): IFCElement
-  ifcPropertySets(filepath: String!, elementId: String!): [PropertySet]
+
+  # --- IFC Element Queries ---
+  elementByType(filePath: String!, elementType: String!): [IFCElement]
+  elementProperties(filePath: String!, elementId: ID!): IFCElement
+  ifcPropertySets(filePath: String!, elementId: ID!): [PropertySet]
 
   # --- Spatial Hierarchy ---
-  ifcSpatialHierarchy(filepath: String!): [SpatialNode]
+  ifcSpatialHierarchy(filePath: String!): [SpatialNode]
 
-  #--- Lifecycle Analysis ---
-  elementMaterialUsage(filepath: String!, elementId: String!): Float
-  elementEmbodiedCarbon(filepath: String!, elementId: String!): Float
+  # --- Lifecycle Analysis ---
+  elementMaterialUsage(filePath: String!, elementId: ID!): Float
+  elementEmbodiedCarbon(filePath: String!, elementId: ID!): Float
 
-  # --- Clash Detection ---
-  detectClashes(filepath: String!): [ClashResult]
+  # --- Clash Detection (3D exact + 2D plan) ---
+  detectClashes(filePath: String!): [ClashResult]
+  # Fast 2D plan-level clashes (WKT-based)
+detectPlanClashes(
+  filePath: String!,
+  aType: String!,
+  bType: String!,
+  zTolerance: Float = 0.20,
+  returnWkt: Boolean = false
+): [Overlap2D!]!
 
-   # --- Geometry Exchange (GLB or Mesh) ---
-  getElementGeometry(filepath: String!, elementId: String!): ElementGeometry
+  # exact boolean intersection volume (m³) between two elements (BRep)
+  clashBetween(filePath: String!, a: ID!, b: ID!): Float
 
-    # ---- Authentication (JWT-based login) ----
+  # 2D plan overlaps (m²) at a storey's elevation ± zTolerance (WKT-based)
+  overlaps2DOnStorey(
+    filePath: String!,
+    storeyId: ID!,
+    aType: String!,
+    bType: String!,
+    zTolerance: Float = 0.2,
+    returnWkt: Boolean = false
+  ): [Overlap2D!]!
+
+  # --- Geometry Exchange (GLB or Mesh) ---
+  getElementGeometry(filePath: String!, elementId: ID!): ElementGeometry
+
+  # --- (Optional) Exact Geometry Exports ---
+  exportElementBrep(filePath: String!, elementId: ID!): GeometryFile
+  exportElementStep(filePath: String!, elementId: ID!): GeometryFile
+  exportElementIges(filePath: String!, elementId: ID!): GeometryFile
+
+  # --- Authentication (JWT-based login) ---
   login(username: String!, role: String!): String
-
 }
 
-# ------ IFC Types ------
+                                        # ---------------- Types ----------------
 type IFCElement {
-  id: String
+  id: ID
   name: String
   type: String
   area: Float
@@ -56,22 +83,40 @@ type Property {
 }
 
 type SpatialNode {
-  id: String
+  id: ID
   name: String
   type: String
   children: [SpatialNode]
 }
 
 type ClashResult {
-  element1: String
-  element2: String
+  element1: ID
+  element2: ID
   intersectionVolume: Float
 }
-# ------ Geometry Response ------
+
+type Overlap2D {
+  aId: ID!
+  bId: ID!
+  area: Float!
+  wkt: String
+}
 type ElementGeometry {
-  id: String
+  id: ID
   name: String
   glbUrl: String
-  vertices: [[Float]]
+  matrix: [[Float]]  # Transform / placement (right-handed 4x4 matrix; location is last column)
+  location: [Float]
+  vertices: [[Float]] # Mesh data (triangulated faces)
   faces: [[Int]]
+  edges: [[Int]]
+  styles: [String]  # Styling / mapping (per-face)
+  materialIds: [Int]
+  itemIds: [Int]
+}
+
+type GeometryFile {      # Returned when exporting exact geometry files
+  filename: String!
+  url: String!
+  contentType: String!
 }

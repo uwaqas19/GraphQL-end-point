@@ -1,0 +1,39 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>IFC Element Viewer</title>
+    <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
+    <style>
+      html, body { height: 100%; margin: 0; }
+      #bar { position: absolute; top: 8px; left: 8px; z-index: 10; background: #fff8; padding: 8px; border-radius: 8px; }
+    </style>
+  </head>
+  <body>
+    <div id="bar">
+      <label>GUID: <input id="guid" style="width: 380px" /></label>
+      <button id="load">Load</button>
+      <span style="margin-left:8px;">(Use <code>?guid=YOUR_GUID</code> in the URL)</span>
+    </div>
+
+    <model-viewer id="mv" camera-controls auto-rotate
+      style="width:100vw;height:100vh;background:#f2f2f2">
+    </model-viewer>
+
+    <script>
+      const params = new URLSearchParams(location.search);
+      const defaultGuid = "1hOSvn6df7F8_7GcBWlRrM";
+      const guid = params.get("guid") || defaultGuid;
+      const mv = document.getElementById("mv");
+      const input = document.getElementById("guid");
+      input.value = guid;
+
+      function load(g) {
+        mv.src = `/static/geometry/${g}.glb`;
+        history.replaceState(null, "", `?guid=${encodeURIComponent(g)}`);
+      }
+      document.getElementById("load").onclick = () => load(input.value.trim());
+      load(guid);
+    </script>
+  </body>
+</html>
