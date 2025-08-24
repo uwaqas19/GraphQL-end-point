@@ -121,11 +121,7 @@ If you do not change schema generation, the pre-generated files are sufficient.
 
 ## Roadmap (sketch)
 
-* Add mutations (write operations)
-* More 2D overlap helpers and storey filters
-* Caching and performance tuning
-* Role-based field masking in middleware
-* Export clash geometry diff as GLB
+
 
 ---
 
