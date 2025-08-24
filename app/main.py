@@ -9,12 +9,12 @@ from app.middleware.auth_middleware import AuthMiddleware
 
 # Resolver imports
 from app.resolvers.geometry_resolvers import GeometryQuery           # geometry + 2D WKT helpers
-from app.resolvers.auth_resolvers import AuthQuery                   # (if we start to work on exposing login)
+from app.resolvers.auth_resolvers import AuthQuery                   # ✅ exposes login
 from app.resolvers.ifc_resolvers import IFCQuery                     # IFC discovery, spatial tree, 3D clashes
-from app.resolvers.lifecycle_resolvers import LifecycleQuery         #  lifecycle here
-from app.resolvers.wkt_clash_resolvers import WKTClashQuery          #  WKT plan clashes here
+from app.resolvers.lifecycle_resolvers import LifecycleQuery          # lifecycle here
+from app.resolvers.wkt_clash_resolvers import WKTClashQuery          # WKT plan clashes here
 
-#  Load GraphQL schema
+# Load GraphQL schema
 schema_path = os.path.join(os.path.dirname(__file__), "schema.graphql")
 type_defs = gql(open(schema_path, encoding="utf-8").read())
 
@@ -24,7 +24,7 @@ def _bind(query_obj: QueryType, field: str, resolver_cls: object, method: str) -
     if callable(fn):
         query_obj.set_field(field, fn)
 
-#  Initialize query bindings
+# Initialize query bindings
 query = QueryType()
 
 # ---------- Geometry (OpenCASCADE + tessellated) ----------
@@ -48,7 +48,7 @@ _bind(query, "elementProperties", IFCQuery, "resolve_element_properties")   # ke
 _bind(query, "ifcPropertySets", IFCQuery, "resolve_ifc_property_sets")      # keep if implemented
 _bind(query, "ifcSpatialHierarchy", IFCQuery, "resolve_ifc_spatial_hierarchy")
 
-# ---------- Lifecycle / Analytics (now in LifecycleQuery) ----------
+# ---------- Lifecycle / Analytics ----------
 _bind(query, "elementMaterialUsage", LifecycleQuery, "resolve_element_material_usage")
 _bind(query, "elementEmbodiedCarbon", LifecycleQuery, "resolve_element_embodied_carbon")
 
@@ -57,15 +57,18 @@ _bind(query, "detectClashes", IFCQuery, "resolve_detect_clashes")            # e
 _bind(query, "detectPlanClashes", WKTClashQuery, "resolve_detect_plan_clashes")
 _bind(query, "overlaps2DOnStorey", WKTClashQuery, "resolve_overlaps_2d_on_storey")
 
-# (Optional: if you expose these fields in schema)
-# _bind(query, "clashBetween", IFCQuery, "resolve_pairwise_clash")
-# _bind(query, "pairClashWithGeometry", IFCQuery, "resolve_pair_clash_with_geometry")
-# _bind(query, "login", AuthQuery, "resolve_login")
+# ---------- Auth (JWT) ----------
+_bind(query, "login", AuthQuery, "resolve_login")
 
 # ✅ Build app and apply middleware
 schema = make_executable_schema(type_defs, query)
 app = FastAPI()
 app.add_middleware(AuthMiddleware)
+
+#  Inject user/role into GraphQL context (from AuthMiddleware)
+def _context_value_fn(request):
+    user = getattr(request.state, "user", None) or {"role": "anonymous"}
+    return {"request": request, "user": user, "role": user.get("role")}
 
 # ✅ Static files for GLB/exports
 os.makedirs("app/static/geometry", exist_ok=True)
@@ -73,22 +76,20 @@ os.makedirs("exports", exist_ok=True)
 app.mount("/static", StaticFiles(directory="app/static"), name="static")
 app.mount("/exports", StaticFiles(directory="exports"), name="exports")
 
-# ✅ GraphQL endpoint
-app.mount("/graphql", GraphQL(schema, debug=True))
+# ✅ GraphQL endpoint (now with context)
+app.mount("/graphql", GraphQL(schema, debug=True, context_value=_context_value_fn))
 
 # ---------- Convenience routes ----------
 @app.get("/", include_in_schema=False)
 def root():
     return RedirectResponse(url="/graphql")
 
-# Simple health check
 @app.get("/health")
 def health():
     return {"status": "ok"}
 
-# Minimal dynamic GLB viewer (no files needed)
+# Minimal dynamic GLB viewer
 DEFAULT_GUID = "1hOSvn6df7F8_7GcBWlRrM"
-
 _VIEWER_HTML = """<!doctype html>
 <html>
   <head>
